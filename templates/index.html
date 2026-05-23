@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medical Insurance Cost Predictor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            color: white;
+            text-align: center;
+            padding: 2rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            flex: 1;
+        }
+
+        .section {
+            background: rgba(255, 255, 255, 0.95);
+            margin: 1.5rem 0;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            backdrop-filter: blur(10px);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .section:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        }
+
+        .section h2 {
+            color: #2c3e50;
+            margin-bottom: 1.5rem;
+            font-size: 1.8rem;
+            position: relative;
+            display: inline-block;
+        }
+
+        .section h2::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 0;
+            height: 3px;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            transition: width 0.8s ease;
+        }
+
+        .section:hover h2::after {
+            width: 100%;
+        }
+
+        .dataset-controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a52);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(255, 107, 107, 0.6);
+        }
+
+        .btn.train {
+            background: linear-gradient(45deg, #4ecdc4, #44a08d);
+            box-shadow: 0 4px 15px rgba(78, 205, 196, 0.4);
+        }
+
+        .btn.train:hover {
+            box-shadow: 0 8px 25px rgba(78, 205, 196, 0.6);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .form-group {
+            position: relative;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #2c3e50;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e1e8ed;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #4ecdc4;
+            box-shadow: 0 0 0 3px rgba(78, 205, 196, 0.1);
+            transform: scale(1.02);
+        }
+
+        .predict-btn {
+            background: linear-gradient(45deg, #45b7d1, #96ceb4);
+            box-shadow: 0 4px 15px rgba(69, 183, 209, 0.4);
+            width: 100%;
+            padding: 15px;
+            font-size: 1.2rem;
+            margin-top: 1rem;
+        }
+
+        .predict-btn:hover {
+            box-shadow: 0 8px 25px rgba(69, 183, 209, 0.6);
+        }
+
+        .result {
+            margin-top: 1.5rem;
+            padding: 1.5rem;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 1.1rem;
+            font-weight: 600;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s ease;
+        }
+
+        .result.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .result.success {
+            background: linear-gradient(45deg, #96ceb4, #ffeaa7);
+            color: #2d3436;
+        }
+
+        .result.error {
+            background: linear-gradient(45deg, #fd79a8, #fdcb6e);
+            color: #2d3436;
+        }
+
+        .prediction-display {
+            font-size: 2rem;
+            margin: 1rem 0;
+            color: #2c3e50;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+            animation: bounceIn 0.8s ease;
+        }
+
+        @keyframes bounceIn {
+            0% { transform: scale(0.3); opacity: 0; }
+            50% { transform: scale(1.05); }
+            70% { transform: scale(0.9); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .dataset-info {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem;
+            border-radius: 10px;
+            margin-top: 1rem;
+        }
+
+        .dataset-info h3 {
+            margin-bottom: 0.5rem;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .info-card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .info-card h4 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .footer {
+            background: #2c3e50;
+            color: white;
+            text-align: center;
+            padding: 1rem;
+            margin-top: auto;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .container {
+                padding: 1rem;
+            }
+            
+            .section {
+                padding: 1.5rem;
+            }
+            
+            .dataset-controls {
+                flex-direction: column;
+            }
+            
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .feature-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+
+        .feature-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 15px;
+            text-align: center;
+            transform: translateY(0);
+            transition: transform 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+        }
+
+        .feature-card h3 {
+            font-size: 1.3rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature-card p {
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🏥 Medical Insurance Cost Predictor</h1>
+        <p>AI-Powered Healthcare Cost Estimation System</p>
+    </div>
+
+    <div class="container">
+        <!-- Dataset Management Section -->
+        <div class="section">
+            <h2>📊 Dataset Management</h2>
+            <div class="dataset-controls">
+                <button class="btn" onclick="generateDataset()">Generate Dataset</button>
+                <button class="btn train" onclick="trainModel()">Train Model</button>
+                <button class="btn" onclick="checkDatasetInfo()">Dataset Info</button>
+            </div>
+            <div id="dataset-result" class="result"></div>
+            <div id="dataset-info-display"></div>
+        </div>
+
+        <!-- Features Section -->
+        <div class="section">
+            <h2>✨ Key Features</h2>
+            <div class="feature-cards">
+                <div class="feature-card">
+                    <h3>🤖 AI-Powered</h3>
+                    <p>Advanced Random Forest algorithm for accurate cost predictions</p>
+                </div>
+                <div class="feature-card">
+                    <h3>📈 Real-time Analysis</h3>
+                    <p>Instant predictions based on multiple health and demographic factors</p>
+                </div>
+                <div class="feature-card">
+                    <h3>🎯 High Accuracy</h3>
+                    <p>Trained on comprehensive dataset with proven statistical models</p>
+                </div>
+                <div class="feature-card">
+                    <h3>🔒 Data Security</h3>
+                    <p>Secure processing with no personal data storage</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Prediction Form Section -->
+        <div class="section">
+            <h2>🔮 Insurance Cost Prediction</h2>
+            <form id="prediction-form">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="age">Age (years)</label>
+                        <input type="number" id="age" name="age" min="18" max="100" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="sex">Gender</label>
+                        <select id="sex" name="sex" required>
+                            <option value="">Select Gender</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="bmi">BMI (Body Mass Index)</label>
+                        <input type="number" id="bmi" name="bmi" min="15" max="50" step="0.1" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="children">Number of Children</label>
+                        <input type="number" id="children" name="children" min="0" max="10" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="smoker">Smoking Status</label>
+                        <select id="smoker" name="smoker" required>
+                            <option value="">Select Status</option>
+                            <option value="yes">Yes, I smoke</option>
+                            <option value="no">No, I don't smoke</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="region">Region</label>
+                        <select id="region" name="region" required>
+                            <option value="">Select Region</option>
+                            <option value="northeast">Northeast</option>
+                            <option value="northwest">Northwest</option>
+                            <option value="southeast">Southeast</option>
+                            <option value="southwest">Southwest</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn predict-btn">🔮 Predict Insurance Cost</button>
+            </form>
+            
+            <div id="prediction-result" class="result"></div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>&copy; 2024 Medical Insurance Cost Predictor | AI-Powered Healthcare Analytics</p>
+    </div>
+
+    <script>
+        // Generate Dataset
+        async function generateDataset() {
+            const resultDiv = document.getElementById('dataset-result');
+            resultDiv.innerHTML = '<div class="loading"></div> Generating dataset...';
+            resultDiv.className = 'result show';
+            
+            try {
+                const response = await fetch('/generate_dataset', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.innerHTML = '✅ ' + data.message;
+                    resultDiv.className = 'result show success';
+                } else {
+                    resultDiv.innerHTML = '❌ ' + data.message;
+                    resultDiv.className = 'result show error';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = '❌ Error: ' + error.message;
+                resultDiv.className = 'result show error';
+            }
+        }
+
+        // Train Model
+        async function trainModel() {
+            const resultDiv = document.getElementById('dataset-result');
+            resultDiv.innerHTML = '<div class="loading"></div> Training model...';
+            resultDiv.className = 'result show';
+            
+            try {
+                const response = await fetch('/train_model', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.innerHTML = '✅ ' + data.message;
+                    resultDiv.className = 'result show success';
+                } else {
+                    resultDiv.innerHTML = '❌ ' + data.message;
+                    resultDiv.className = 'result show error';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = '❌ Error: ' + error.message;
+                resultDiv.className = 'result show error';
+            }
+        }
+
+        // Check Dataset Info
+        async function checkDatasetInfo() {
+            try {
+                const response = await fetch('/dataset_info');
+                const data = await response.json();
+                const infoDiv = document.getElementById('dataset-info-display');
+                
+                if (data.exists) {
+                    infoDiv.innerHTML = `
+                        <div class="dataset-info">
+                            <h3>📋 Dataset Information</h3>
+                            <div class="info-grid">
+                                <div class="info-card">
+                                    <h4>${data.shape[0]}</h4>
+                                    <p>Total Records</p>
+                                </div>
+                                <div class="info-card">
+                                    <h4>${data.shape[1]}</h4>
+                                    <p>Features</p>
+                                </div>
+                                <div class="info-card">
+                                    <h4>$${Math.round(data.statistics.charges.mean)}</h4>
+                                    <p>Average Cost</p>
+                                </div>
+                                <div class="info-card">
+                                    <h4>$${Math.round(data.statistics.charges.max)}</h4>
+                                    <p>Maximum Cost</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    infoDiv.innerHTML = `
+                        <div class="dataset-info">
+                            <h3>⚠️ Dataset Not Found</h3>
+                            <p>Please generate the dataset first by clicking the "Generate Dataset" button.</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                document.getElementById('dataset-info-display').innerHTML = `
+                    <div class="dataset-info">
+                        <h3>❌ Error</h3>
+                        <p>Error fetching dataset information: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Handle Prediction Form
+        document.getElementById('prediction-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const resultDiv = document.getElementById('prediction-result');
+            resultDiv.innerHTML = '<div class="loading"></div> Calculating insurance cost...';
+            resultDiv.className = 'result show';
+            
+            const formData = new FormData(this);
+            const data = {
+                age: parseInt(formData.get('age')),
+                sex: formData.get('sex'),
+                bmi: parseFloat(formData.get('bmi')),
+                children: parseInt(formData.get('children')),
+                smoker: formData.get('smoker'),
+                region: formData.get('region')
+            };
+            
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    resultDiv.innerHTML = `
+                        <div>🎯 Prediction Complete!</div>
+                        <div class="prediction-display">Estimated Cost: ${result.prediction.toLocaleString()}</div>
+                        <div>Based on your provided information</div>
+                    `;
+                    resultDiv.className = 'result show success';
+                } else {
+                    resultDiv.innerHTML = '❌ ' + result.message;
+                    resultDiv.className = 'result show error';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = '❌ Error: ' + error.message;
+                resultDiv.className = 'result show error';
+            }
+        });
+
+        // BMI Calculator Helper
+        function calculateBMI() {
+            const height = prompt("Enter your height in cm:");
+            const weight = prompt("Enter your weight in kg:");
+            
+            if (height && weight) {
+                const heightM = height / 100;
+                const bmi = (weight / (heightM * heightM)).toFixed(1);
+                document.getElementById('bmi').value = bmi;
+                alert(`Your BMI is: ${bmi}`);
+            }
+        }
+
+        // Add BMI calculator button
+        window.addEventListener('DOMContentLoaded', function() {
+            const bmiGroup = document.querySelector('input[name="bmi"]').parentElement;
+            const calcButton = document.createElement('button');
+            calcButton.type = 'button';
+            calcButton.textContent = '🧮 Calculate BMI';
+            calcButton.className = 'btn';
+            calcButton.style.marginTop = '0.5rem';
+            calcButton.style.width = '100%';
+            calcButton.onclick = calculateBMI;
+            bmiGroup.appendChild(calcButton);
+        });
+
+        // Auto-load dataset info on page load
+        window.addEventListener('DOMContentLoaded', function() {
+            setTimeout(checkDatasetInfo, 1000);
+        });
+    </script>
+</body>
+</html>
